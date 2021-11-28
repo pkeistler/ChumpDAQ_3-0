@@ -8,6 +8,7 @@ from kivy.uix.button import Button
 from kivy.properties import ObjectProperty, NumericProperty, StringProperty
 from threading import Thread
 from .sensors import monitorsensors
+from .gps_logger import monitorgps
 from kivy.clock import Clock
 from time import time
 import os
@@ -43,9 +44,9 @@ class MainDashScreen(Widget):
     def initdatalogger(self, dt):
         old_dirs = sorted(next(os.walk(self.log_folder))[1], key=lambda x: int(x))
         if len(old_dirs) == 0:
-            new_folder = "000"
+            new_folder = "0000"
         else:
-            new_folder = "{:03d}".format(int(old_dirs[-1])+1)
+            new_folder = "{:04d}".format(int(old_dirs[-1])+1)
         self.log_folder = os.path.join(self.log_folder,new_folder)
         os.makedirs(self.log_folder)
         with open(os.path.join(self.log_folder,"data.log"), 'a') as f:
@@ -65,6 +66,8 @@ class ChumpDashApp(App):
     def on_start(self, *args):
         print('Starting sensor thread.')
         Thread(target=monitorsensors, args=(self.MDS,)).start()
+        print('Starting gps thread.')
+        Thread(target=monitorgps, args=(self.MDS,)).start()
 
 if __name__ == '__main__':
     # Setup the window position

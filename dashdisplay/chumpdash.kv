@@ -9,7 +9,8 @@
     display_last: False
     shadowd_color: '#b0b000'
     needle_color: '#ffffb0'
-    label_font_size: 30
+    label_font_size: 60
+    value_font_size: 30
     label_radius_ratio: -0.5
     label_angle_ratio: 0.4
     sector1: '#000080'
@@ -17,24 +18,24 @@
     sector3: '#b00000'
  
 <GaugeLabel@Label>:
-    font_size: '40sp'
+    font_size: '80sp'
     markup: True
     bold: True
 
 <TimingHeader@Label>:
-    font_size: '30sp'
+    font_size: '60sp'
     markup: True
     bold: True
     
 <TimingValue@Label>:
-    font_size: '60sp'
+    font_size: '120sp'
     markup: True
     bold: True
     
 <MainDashScreen>:
     GridLayout:
         cols: 1
-        size: 1020, 700
+        size: 1910, 1020
         GridLayout:
             cols: 4
             Button:
@@ -60,14 +61,14 @@
                 TimingValue:
                     id: current_lap
                     text: "1: --:--"
-                    font_size: '50sp'
+                    font_size: '100sp'
                 TimingHeader:
                     text: "[u]Best Lap[/u]"
                     size_hint: 1, 0.5
                 TimingValue:
                     id: best_lap
                     text: "1: --:--"
-                    font_size: '50sp'
+                    font_size: '100sp'
             GridLayout:
                 cols: 1
                 size_hint: 0.3, 1
