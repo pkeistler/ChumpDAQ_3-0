@@ -1,0 +1,7 @@
+Added the following line to /etc/lightdm/lightdm.conf to eliminate mouse cursor
+xserver-command = X -nocursor
+
+Added the following line to /etc/xdg/lxsession/LXDE-pi/autostart to automatically start gui
+@/home/pi/chumpdaq_v3/start_cd.sh
+
+Did something to disable screensaver...?
