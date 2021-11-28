@@ -1,8 +1,12 @@
 from piplates.DAQCplate import getADC,toggleDOUTbit
 from math import log
 from time import time
+from time import sleep
 from kivy.clock import Clock
 from functools import partial
+from qwiic_icm20948 import QwiicIcm20948 as q9dof
+import os
+
 
 class Sensor(object):
     def __init__(self,
@@ -77,7 +81,7 @@ def monitorsensors(dash):
     while True:
        curtime = time()
        if curtime-last_read < period:
-           continue
+           continue 
        last_read = curtime
        for name,sensor in sensors.items():
            val = sensor.getVal()
@@ -90,3 +94,49 @@ def monitorsensors(dash):
            elif name == 'oilP':
                val = round(val,1)
                Clock.schedule_once(partial(dash.set_oilp, val),0)
+
+def monitor9dof(dash):
+    last_read = 0
+    init_check_period = 1.0
+    main_log_start = False
+    sensor_period = 0.25
+
+    while not main_log_start:
+        curtime = time()
+        if curtime-last_read < init_check_period:
+            continue
+        last_read = curtime
+        if dash.log_folder[-1] == "s":
+            continue
+        main_log_start = True
+
+    imu_log_file = os.path.join(dash.log_folder, 'imu.log')
+
+    imu = q9dof()
+    if not imu.connected:
+        print('IMU not connected')
+        return
+
+    imu.begin()
+
+    while True:
+        if dash.start_time < 0:
+            continue
+        curtime = time()
+        if curtime-last_read < sensor_period:
+            continue
+        last_read = curtime
+        if imu.dataReady():
+            imu.getAgmt()
+            with open(imu_log_file, 'a') as f:
+                f.write('{:.2f} {:06d} {:06d} {:06d} {:06d} {:06d} {:06d} {:06d} {:06d} {:06d}\n'.format(
+                    curtime-dash.start_time,
+                    imu.axRaw,
+                    imu.ayRaw,
+                    imu.azRaw,
+                    imu.gxRaw,
+                    imu.gyRaw,
+                    imu.gzRaw,
+                    imu.mxRaw,
+                    imu.myRaw,
+                    imu.mzRaw))

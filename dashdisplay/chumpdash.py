@@ -8,6 +8,7 @@ from kivy.uix.button import Button
 from kivy.properties import ObjectProperty, NumericProperty, StringProperty
 from threading import Thread
 from .sensors import monitorsensors
+from .sensors import monitor9dof
 from .gps_logger import monitorgps
 from kivy.clock import Clock
 from time import time
@@ -38,7 +39,7 @@ class MainDashScreen(Widget):
         current_time = time()
         if self.start_time < 0:
             self.start_time = current_time
-            Clock.schedule_interval(self.datalogger, 0.1)
+            Clock.schedule_interval(self.datalogger, 0.5)
         else:
             self.seat_time = current_time - self.start_time
     def initdatalogger(self, dt):
@@ -68,6 +69,8 @@ class ChumpDashApp(App):
         Thread(target=monitorsensors, args=(self.MDS,)).start()
         print('Starting gps thread.')
         Thread(target=monitorgps, args=(self.MDS,)).start()
+        print('Starting imu thread.')
+        Thread(target=monitor9dof, args=(self.MDS,)).start()
 
 if __name__ == '__main__':
     # Setup the window position
