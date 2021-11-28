@@ -1,0 +1,111 @@
+#:kivy 1.11.1
+
+#:import SpeedMeter kivy_garden.speedmeter.SpeedMeter
+
+<MyGauge@SpeedMeter>:
+    start_angle: -135
+    end_angle: 90
+    display_first: False
+    display_last: False
+    shadowd_color: '#b0b000'
+    needle_color: '#ffffb0'
+    label_font_size: 30
+    label_radius_ratio: -0.5
+    label_angle_ratio: 0.4
+    sector1: '#000080'
+    sector2: '#003000'
+    sector3: '#b00000'
+ 
+<GaugeLabel@Label>:
+    font_size: '40sp'
+    markup: True
+    bold: True
+
+<TimingHeader@Label>:
+    font_size: '30sp'
+    markup: True
+    bold: True
+    
+<TimingValue@Label>:
+    font_size: '60sp'
+    markup: True
+    bold: True
+    
+<MainDashScreen>:
+    GridLayout:
+        cols: 1
+        size: 1020, 700
+        GridLayout:
+            cols: 4
+            Button:
+                size_hint: 2, 1
+            GridLayout:
+                size_hint: 1, 1
+                cols: 1
+                TimingHeader:
+                    text: "[u]Seat Time[/u]"
+                    size_hint: 1, 0.5
+                TimingValue:
+                    id: seat_timer
+                    text: "{:d}:{:02d}".format(int(root.seat_time/3600.),int((root.seat_time%3600)/60))
+                TimingHeader:
+                    text: "[u]Current Delta[/u]"
+                    size_hint: 1, 0.5
+                TimingValue:
+                    id: current_delta
+                    text: "+00.0"
+                TimingHeader:
+                    text: "[u]Current Lap[/u]"
+                    size_hint: 1, 0.5
+                TimingValue:
+                    id: current_lap
+                    text: "1: --:--"
+                    font_size: '50sp'
+                TimingHeader:
+                    text: "[u]Best Lap[/u]"
+                    size_hint: 1, 0.5
+                TimingValue:
+                    id: best_lap
+                    text: "1: --:--"
+                    font_size: '50sp'
+            GridLayout:
+                cols: 1
+                size_hint: 0.3, 1
+                GaugeLabel:
+                    text: 'WT'
+                GaugeLabel:
+                    text: 'OT'
+                GaugeLabel:
+                    text: 'OP'
+            GridLayout:
+                cols: 1
+                size_hint: 1, 1
+                MyGauge:
+                    label: str(int(root.watert))
+                    max: 240
+                    min: 100
+                    tick: 20
+                    value: max(min(self.max,root.watert),self.min)
+                    sectors: 100, self.sector1, 150, self.sector2, 220, self.sector3, 240
+                MyGauge:
+                    label: str(int(root.oilt))
+                    max: 280
+                    min: 140
+                    tick: 20
+                    value: max(min(self.max,root.oilt),self.min)
+                    sectors: 140, self.sector1, 170, self.sector2, 240, self.sector3, 280
+                MyGauge:
+                    label: str(root.oilp)
+                    max: 100
+                    min: 0
+                    tick: 20
+                    value: max(min(self.max,root.oilp),self.min)
+                    sectors: 0, self.sector3, 10, self.sector2, 90, self.sector3, 100
+        GridLayout:
+            cols: 5
+            size_hint: 1, 0.20
+            Button:
+            Button:
+            Label:
+            Button:
+            Button:
