@@ -21,7 +21,7 @@ class MainDashScreen(Widget):
     oilp = NumericProperty(50)
     seat_time = NumericProperty(0)
     start_time = NumericProperty(-1)
-    log_folder = StringProperty("/home/pi/chump_logs")
+    log_folder = StringProperty("/media/chump_thumb/chump_logs")
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         Clock.schedule_once(self.initdatalogger, 0.0)
