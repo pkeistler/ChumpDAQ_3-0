@@ -32,14 +32,38 @@
     markup: True
     bold: True
     
+<TrackHeader@Label>:
+    font_size: '60sp'
+    markup: True
+    bold: True
+    
+<TrackValue@Label>:
+    font_size: '80sp'
+    markup: True
+    bold: True
+
 <MainDashScreen>:
     GridLayout:
         cols: 1
         size: 1910, 1020
         GridLayout:
             cols: 4
-            Button:
+            #Button:
+            #    size_hint: 1, 1
+            GridLayout:
                 size_hint: 2, 1
+                cols: 1
+                GridLayout:
+                    size_hint: 1,0.15
+                    cols: 2
+                    TrackHeader:
+                        text: "[u]Track:[/u]"
+                        size_hint: 0.3, 1
+                    TrackValue:
+                        id: track_name
+                        text: "{}".format(root.current_track)
+                Button:
+                    size_hint: 1,1
             GridLayout:
                 size_hint: 1, 1
                 cols: 1

@@ -22,6 +22,7 @@ class MainDashScreen(Widget):
     seat_time = NumericProperty(0)
     start_time = NumericProperty(-1)
     log_folder = StringProperty("/media/chump_thumb/chump_logs")
+    current_track = StringProperty("Finding track.")
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         Clock.schedule_once(self.initdatalogger, 0.0)
@@ -34,6 +35,8 @@ class MainDashScreen(Widget):
         self.oilt = value
     def set_oilp(self, value, *largs):
         self.oilp = value
+    def set_track(self, value, *largs):
+        self.current_track = value
 
     def seattimecallback(self, dt):
         current_time = time()

@@ -31,11 +31,20 @@ class Sensor(object):
         #toggleDOUTbit(0,self.pin)
         if self.fittype == 'rpolylog':
             vcc = getADC(0,8)
-            r2 = self.resistor1*va/(vcc-va)+self.rtrim
-            val = log(r2)
-            val = 1.0/(self.curvefit[0]
-                       +val*(self.curvefit[1]
-                       +self.curvefit[2]*val*val))
+            try:
+                r2 = self.resistor1*va/(vcc-va)+self.rtrim
+            except:
+                r2 = self.resistor1
+            try:
+                val = log(r2)
+            except:
+                val = 0.0
+            try:
+                val = 1.0/(self.curvefit[0]
+                           +val*(self.curvefit[1]
+                           +self.curvefit[2]*val*val))
+            except:
+                val = 273.0
             val = val*9.0/5.0 - 459.67
             return val
         elif self.fittype == 'vlinear':
