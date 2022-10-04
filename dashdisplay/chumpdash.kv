@@ -68,30 +68,31 @@
                 size_hint: 1, 1
                 cols: 1
                 TimingHeader:
-                    text: "[u]Seat Time[/u]"
+                    text: "[u]Delta Time[/u]"
                     size_hint: 1, 0.5
                 TimingValue:
-                    id: seat_timer
-                    text: "{:d}:{:02d}".format(int(root.seat_time/3600.),int((root.seat_time%3600)/60))
+                    id: delta_time
+                    #text: "{:d}:{:02d}".format(int(root.seat_time/3600.),int((root.seat_time%3600)/60))
+                    text: root.delta_time
                 TimingHeader:
-                    text: "[u]Current Delta[/u]"
+                    text: "[u]Delta Velocity[/u]"
                     size_hint: 1, 0.5
                 TimingValue:
-                    id: current_delta
-                    text: "+00.0"
+                    id: delta_velocity
+                    text: root.delta_velocity
                 TimingHeader:
-                    text: "[u]Current Lap[/u]"
+                    text: "[u]Last Lap[/u]"
                     size_hint: 1, 0.5
                 TimingValue:
-                    id: current_lap
-                    text: "1: --:--"
+                    id: last_lap
+                    text: root.last_lap
                     font_size: '100sp'
                 TimingHeader:
                     text: "[u]Best Lap[/u]"
                     size_hint: 1, 0.5
                 TimingValue:
                     id: best_lap
-                    text: "1: --:--"
+                    text: root.best_lap
                     font_size: '100sp'
             GridLayout:
                 cols: 1

@@ -7,6 +7,7 @@ import os
 from datetime import datetime
 from datetime import timedelta
 import numpy as np
+from scipy.spatial import KDTree
 
 class lap_tracker(object):
     def __init__(
@@ -24,6 +25,8 @@ class lap_tracker(object):
             gfile = 'gps_nmea.log'
         self.gps_log_file = os.path.join(self.log_folder,gfile)
         self.starttime = None
+        self.last_delta_update = None
+        self.delta_update_period = timedelta(seconds=0.5)
         self.tzd = timedelta(hours=-4)
         with open(self.gps_log_file, 'a') as f:
             f.write('date time longitude latitude speed\n')
@@ -34,6 +37,9 @@ class lap_tracker(object):
         self.sfvecnorm = None
         self.sfradius = 0.0
         self.currentlaptrace = []
+        self.bestKDT = None
+        self.bestTIM = None
+        self.bestSPD = None
         self.currentlapnum = 0
         self.currentlapstart = None
         self.laphistory = []
@@ -76,8 +82,8 @@ class lap_tracker(object):
             #track found
             self.trackname = alltracks[close_track]['name']
             self.tracksfline = alltracks[close_track]['sfline']
-            with open(self.gps_log_file, 'a') as f:
-                f.write('Track {}, distance {}\n'.format(self.trackname,close_dist))
+            #with open(self.gps_log_file, 'a') as f:
+            #    f.write('Track {}, distance {}\n'.format(self.trackname,close_dist))
             Clock.schedule_once(partial(self.dash.set_track, self.trackname),0)
             sfl = self.tracksfline
             sfvector = np.array([(sfl[3]-sfl[1])*self.feet_per_lon, (sfl[2]-sfl[0])*self.feet_per_lat])
@@ -220,6 +226,24 @@ class lap_tracker(object):
       #print('Best lap: ',fastlap)
       #print('Best lap time: ',fastlaptime)
 
+    def update_deltas(self,sample,time,speed):
+        if self.bestKDT is None:
+            return
+        dists, inds = self.bestKDT.query(sample, k=2)
+        dists = np.flip(dists/np.sum(dists))
+        deltat = max(-20.0,min(20.0,time - np.sum(dists*self.bestTIM[inds])))
+        deltav = max(-20.0,min(20.0,speed - np.sum(dists*self.bestSPD[inds])))
+        if deltat < 0.0:
+            sdeltat = '[color=#00FF00]{:5.2f}[/color]'.format(deltat)
+        else:
+            sdeltat = '[color=#FF0000]+{:5.2f}[/color]'.format(deltat)
+        if deltav < 0.0:
+            sdeltav = '[color=#FF0000]{:5.2f}[/color]'.format(deltav)
+        else:
+            sdeltav = '[color=#00FF00]+{:5.2f}[/color]'.format(deltav)
+        Clock.schedule_once(partial(self.dash.set_deltat, sdeltat),0)
+        Clock.schedule_once(partial(self.dash.set_deltav, sdeltav),0)
+
     def add_to_lap(self):
         #First convert to feet and check if we've crossed the start finish line
         xfeet = (self.lon - self.tracksfline[1])*self.feet_per_lon
@@ -260,9 +284,27 @@ class lap_tracker(object):
                                 self.laphistory[-1][0],
                                 self.laphistory[-1][1],
                                 ))
+                    llaptime = '{}:{:05.2f}'.format(
+                            int(laptime/60.0),
+                            laptime%60,
+                            )
+                    Clock.schedule_once(partial(self.dash.set_lastlap, llaptime),0)
+                    blaptime = '{}:{:05.2f}'.format(
+                            int(self.bestlaptime/60.0),
+                            self.bestlaptime%60,
+                            )
+                    Clock.schedule_once(partial(self.dash.set_bestlap, blaptime),0)
                     if laptime < self.bestlaptime:
+                        Clock.schedule_once(partial(self.dash.set_lastlap,
+                                '[color=#00FF00]{}[/color]'.format(llaptime)),0)
+                        Clock.schedule_once(partial(self.dash.set_bestlap,
+                                '[color=#00FF00]{}[/color]'.format(llaptime)),0)
                         self.bestlaptime = laptime
                         self.bestlapnum = self.currentlapnum
+                        # build k-d tree for sampling use later
+                        self.bestKDT = KDTree(np.array([x[1] for x in self.currentlaptrace]))
+                        self.bestTIM = np.array([x[0] for x in self.currentlaptrace])
+                        self.bestSPD = np.array([x[2] for x in self.currentlaptrace])
                     # now increment lap
                     self.currentlapnum = self.currentlapnum + 1
                     self.currentlaptrace = []
@@ -278,6 +320,12 @@ class lap_tracker(object):
                              self.speed
                              ])
         self.debug_write('current lap trace: {}'.format(self.currentlaptrace[-1]))
+        # Update deltas if the period has passed
+        if self.last_delta_update is None:
+            self.last_delta_update = self.gtime
+        if self.gtime - self.last_delta_update >= self.delta_update_period:
+            self.update_deltas(np.array([xfeet,yfeet]),timed.total_seconds(),self.speed)
+            self.last_delta_update = self.gtime
                     
     def write_out_lap(self):
         with open(os.path.join(self.log_folder,'lap_trace_{:04d}.dat'.format(self.currentlapnum)), 'w') as f:
@@ -301,7 +349,7 @@ def monitorgps(dash):
 
     #temporary nmea file read for testing
     nmeagps = open('/media/chump_thumb/chump_log_processing/road_atlanta_and_mid_ohio_2022/0074/gps_nmea.log', 'r')
-    nmea_gps_period = 0.1
+    nmea_gps_period = 0.025
 
     starttime = None
     while True:

@@ -21,6 +21,10 @@ class MainDashScreen(Widget):
     oilp = NumericProperty(50)
     seat_time = NumericProperty(0)
     start_time = NumericProperty(-1)
+    delta_time = StringProperty('+0.00')
+    delta_velocity = StringProperty('+0.00')
+    last_lap = StringProperty('0: 9.59')
+    best_lap = StringProperty('0: 9.59')
     log_folder = StringProperty("/media/chump_thumb/chump_logs")
     current_track = StringProperty("Finding track.")
     def __init__(self, **kwargs):
@@ -37,6 +41,14 @@ class MainDashScreen(Widget):
         self.oilp = value
     def set_track(self, value, *largs):
         self.current_track = value
+    def set_deltat(self, value, *largs):
+        self.delta_time = value
+    def set_deltav(self, value, *largs):
+        self.delta_velocity = value
+    def set_lastlap(self, value, *largs):
+        self.last_lap = value
+    def set_bestlap(self, value, *largs):
+        self.best_lap = value
 
     def seattimecallback(self, dt):
         current_time = time()
