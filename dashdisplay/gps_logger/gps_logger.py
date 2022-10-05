@@ -8,6 +8,9 @@ from datetime import datetime
 from datetime import timedelta
 import numpy as np
 from scipy.spatial import KDTree
+#import matplotlib.pyplot as plt
+#from kivy.garden.matplotlib.backend_kivyagg import FigureCanvasKivyAgg
+##from kivy_garden.graph import MeshLinePlot
 
 class lap_tracker(object):
     def __init__(
@@ -27,6 +30,8 @@ class lap_tracker(object):
         self.starttime = None
         self.last_delta_update = None
         self.delta_update_period = timedelta(seconds=0.5)
+        self.last_plot_update = None
+        self.plot_update_period = timedelta(seconds=1.0)
         self.tzd = timedelta(hours=-4)
         with open(self.gps_log_file, 'a') as f:
             f.write('date time longitude latitude speed\n')
@@ -40,6 +45,9 @@ class lap_tracker(object):
         self.bestKDT = None
         self.bestTIM = None
         self.bestSPD = None
+        self.deltav_trace_file = os.path.join(self.log_folder,'deltav_trace.png')
+        with open(self.deltav_trace_file, 'a') as f:
+            f.write('time xfeet yfeet deltav deltat\n')
         self.currentlapnum = 0
         self.currentlapstart = None
         self.laphistory = []
@@ -48,7 +56,13 @@ class lap_tracker(object):
         self.bestlaptime = 9999.0
         self.bestlapnum = 0
         self.debug = False
+        ##self.plot = MeshLinePlot()
+        ##self.dash.graph.add_plot(self.plot)
 
+    ##def plot_track(self):
+    ##    xy = [x[1] for x in self.currentlaptrace]
+    ##    self.plot.points = xy
+        
     def debug_write(self,statement,force=False):
         if self.debug or force:
             with open(os.path.join(self.log_folder,'debug.log'), 'a') as f:
@@ -233,6 +247,16 @@ class lap_tracker(object):
         dists = np.flip(dists/np.sum(dists))
         deltat = max(-20.0,min(20.0,time - np.sum(dists*self.bestTIM[inds])))
         deltav = max(-20.0,min(20.0,speed - np.sum(dists*self.bestSPD[inds])))
+        with open(self.deltav_trace_file, 'a') as f:
+            f.write('{} {} {} {} {}\n'.format(
+                time,
+                *sample,
+                deltav,
+                deltat
+                ))
+        if self.gtime - self.last_delta_update >= self.delta_update_period:
+            #update the plot using Popen
+            pass
         if deltat < 0.0:
             sdeltat = '[color=#00FF00]{:5.2f}[/color]'.format(deltat)
         else:
@@ -277,6 +301,7 @@ class lap_tracker(object):
                     nextlappoint = [0.0]+self.currentlaptrace[-1][1:]
                     self.debug_write('nextlapopint {}'.format(nextlappoint))
                     self.write_out_lap()
+                    ##self.plot_track()
                     # Add this lap to the lap history
                     self.laphistory.append([self.currentlapnum,laptime])
                     with open(os.path.join(self.log_folder,'all_laps.dat'), 'a') as f:
@@ -323,6 +348,8 @@ class lap_tracker(object):
         # Update deltas if the period has passed
         if self.last_delta_update is None:
             self.last_delta_update = self.gtime
+        if self.last_plot_update is None:
+            self.last_plot_udpate = self.gtime
         if self.gtime - self.last_delta_update >= self.delta_update_period:
             self.update_deltas(np.array([xfeet,yfeet]),timed.total_seconds(),self.speed)
             self.last_delta_update = self.gtime

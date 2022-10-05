@@ -5,7 +5,16 @@ from kivy.core.window import Window
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.widget import Widget
 from kivy.uix.button import Button
-from kivy.properties import ObjectProperty, NumericProperty, StringProperty
+from kivy.uix.image import Image
+from kivy.properties import (
+        ObjectProperty,
+        NumericProperty,
+        StringProperty,
+        #ListProperty,
+        )
+##from kivy_garden.graph import Graph, LinePlot
+#from kivy.garden.matplotlib.backend_kivyagg import FigureCanvasKivyAgg
+#import matplotlib.pyplot as plt
 from threading import Thread
 from .sensors import monitorsensors
 from .sensors import monitor9dof
@@ -13,6 +22,11 @@ from .gps_logger import monitorgps
 from kivy.clock import Clock
 from time import time
 import os
+
+x = [1,2,3,4,5]
+y = [5,4,3,2,1]
+
+#plt.plot(x,y)
 
 class MainDashScreen(Widget):
     # Kivy properties that need to be updated by Clock or other threads
@@ -27,11 +41,26 @@ class MainDashScreen(Widget):
     best_lap = StringProperty('0: 9.59')
     log_folder = StringProperty("/media/chump_thumb/chump_logs")
     current_track = StringProperty("Finding track.")
+#    current_lap_xtrace = ListProperty([0.0])
+#    current_lap_ytrace = ListProperty([0.0])
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         Clock.schedule_once(self.initdatalogger, 0.0)
         Clock.schedule_once(self.seattimecallback, 0.1)
         Clock.schedule_interval(self.seattimecallback, 10.0)
+
+        self.image = Image(source='/home/pi/chumpdaq_v3/dashdisplay/test.png')
+        self.ids.plot_area.add_widget(self.image)
+##        self.graph = Graph()
+##        self.ids.plot_area.add_widget(self.graph)
+#    def set_track_xtrace(self, value, *largs):
+#        self.current_lap_xtrace = value
+#    def set_track_ytrace(self, value, *largs):
+#        self.current_lap_ytrace = value
+#        self.ids.plot_area.clear_widgets()
+#        plt.cla()
+#        plt.plot(self.current_lap_xtrace,self.current_lap_ytrace)
+#        self.ids.plot_area.add_widget(FigureCanvasKivyAgg(plt.gcf()))
 
     def set_watert(self, value, *largs):
         self.watert = value
