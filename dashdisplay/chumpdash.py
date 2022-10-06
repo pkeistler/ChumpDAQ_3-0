@@ -35,12 +35,14 @@ class MainDashScreen(Widget):
     oilp = NumericProperty(50)
     seat_time = NumericProperty(0)
     start_time = NumericProperty(-1)
+    cur_speed = NumericProperty(0)
     delta_time = StringProperty('+0.00')
     delta_velocity = StringProperty('+0.00')
     last_lap = StringProperty('0: 9.59')
     best_lap = StringProperty('0: 9.59')
     log_folder = StringProperty("/media/chump_thumb/chump_logs")
     current_track = StringProperty("Finding track.")
+    lap_image_init = False
 #    current_lap_xtrace = ListProperty([0.0])
 #    current_lap_ytrace = ListProperty([0.0])
     def __init__(self, **kwargs):
@@ -49,8 +51,6 @@ class MainDashScreen(Widget):
         Clock.schedule_once(self.seattimecallback, 0.1)
         Clock.schedule_interval(self.seattimecallback, 10.0)
 
-        self.image = Image(source='/home/pi/chumpdaq_v3/dashdisplay/test.png')
-        self.ids.plot_area.add_widget(self.image)
 ##        self.graph = Graph()
 ##        self.ids.plot_area.add_widget(self.graph)
 #    def set_track_xtrace(self, value, *largs):
@@ -78,6 +78,15 @@ class MainDashScreen(Widget):
         self.last_lap = value
     def set_bestlap(self, value, *largs):
         self.best_lap = value
+    def update_lap_image(self, *largs):
+        if not self.lap_image_init:
+            self.image = Image(source='{}/lap_plot.png'.format(self.log_folder))
+            self.ids.plot_area.add_widget(self.image)
+            self.lap_image_init = True
+        else:
+            self.image.reload()
+    def set_speed(self, value, *largs):
+        self.cur_speed = value
 
     def seattimecallback(self, dt):
         current_time = time()

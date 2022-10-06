@@ -8,6 +8,7 @@ from datetime import datetime
 from datetime import timedelta
 import numpy as np
 from scipy.spatial import KDTree
+import subprocess
 #import matplotlib.pyplot as plt
 #from kivy.garden.matplotlib.backend_kivyagg import FigureCanvasKivyAgg
 ##from kivy_garden.graph import MeshLinePlot
@@ -20,12 +21,19 @@ class lap_tracker(object):
             gpsformat='ubx'):
         self.gpsstream = gpsstream
         self.log_folder = dash_obj.log_folder
+        log_folder_short = self.log_folder.split('/')[-1]
+        self.lap_command = [
+                "/home/pi/chumpdaq_v3/dashdisplay/gps_logger/plot_lap_deltav.sh",
+                log_folder_short
+                ]
         self.gpsformat = gpsformat
         self.dash = dash_obj
         if gpsformat == 'ubx':
             gfile = 'gps_ubx.log'
         else:
             gfile = 'gps_nmea.log'
+        self.speed_samples = 0
+        self.speed_running_avg = 0.0
         self.gps_log_file = os.path.join(self.log_folder,gfile)
         self.starttime = None
         self.last_delta_update = None
@@ -45,7 +53,7 @@ class lap_tracker(object):
         self.bestKDT = None
         self.bestTIM = None
         self.bestSPD = None
-        self.deltav_trace_file = os.path.join(self.log_folder,'deltav_trace.png')
+        self.deltav_trace_file = os.path.join(self.log_folder,'deltav_trace.dat')
         with open(self.deltav_trace_file, 'a') as f:
             f.write('time xfeet yfeet deltav deltat\n')
         self.currentlapnum = 0
@@ -255,8 +263,10 @@ class lap_tracker(object):
                 deltat
                 ))
         if self.gtime - self.last_delta_update >= self.delta_update_period:
-            #update the plot using Popen
-            pass
+            #update the plot using subprocess
+            plot_lap = subprocess.Popen(self.lap_command)
+            plot_lap.wait()
+            Clock.schedule_once(partial(self.dash.update_lap_image),0)
         if deltat < 0.0:
             sdeltat = '[color=#00FF00]{:5.2f}[/color]'.format(deltat)
         else:
@@ -267,12 +277,18 @@ class lap_tracker(object):
             sdeltav = '[color=#00FF00]+{:5.2f}[/color]'.format(deltav)
         Clock.schedule_once(partial(self.dash.set_deltat, sdeltat),0)
         Clock.schedule_once(partial(self.dash.set_deltav, sdeltav),0)
+        if self.speed_samples > 0:
+            avg_spd = self.speed_running_avg/self.speed_samples
+            Clock.schedule_once(partial(self.dash.set_speed, avg_spd),0)
 
     def add_to_lap(self):
         #First convert to feet and check if we've crossed the start finish line
         xfeet = (self.lon - self.tracksfline[1])*self.feet_per_lon
         yfeet = (self.lat - self.tracksfline[0])*self.feet_per_lat
         self.debug_write('new point {} {}'.format(xfeet,yfeet))
+        # update speed calcs
+        self.speed_samples += 1
+        self.speed_running_avg += self.speed
         current_radius = np.linalg.norm([xfeet,yfeet])
         #self.debug_write('radius: {} {}'.format(current_radius,self.sfradius))
         if current_radius < self.sfradius:
@@ -376,9 +392,8 @@ def monitorgps(dash):
 
     #temporary nmea file read for testing
     nmeagps = open('/media/chump_thumb/chump_log_processing/road_atlanta_and_mid_ohio_2022/0074/gps_nmea.log', 'r')
-    nmea_gps_period = 0.025
+    nmea_gps_period = 1.0
 
-    starttime = None
     while True:
         if not main_log_start:
             curtime = time()

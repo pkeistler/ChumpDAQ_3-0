@@ -131,8 +131,16 @@
         GridLayout:
             cols: 5
             size_hint: 1, 0.20
-            Button:
-            Button:
+            TimingHeader:
+                text: "[u]Current\nSpeed[/u]"
+            TimingValue:
+                id: cur_speed
+                text: print('{:4.1f}'.format(root.cur_speed))
+                font_size: '100sp'
             Label:
-            Button:
-            Button:
+            TimingHeader:
+                text: "[u]Seat\nTime[/u]"
+            TimingValue:
+                id: seat_time
+                text: print(root.seat_time)
+                font_size: '100sp'
