@@ -135,12 +135,12 @@
                 text: "[u]Current\nSpeed[/u]"
             TimingValue:
                 id: cur_speed
-                text: print('{:4.1f}'.format(root.cur_speed))
+                text: '{:4.1f}'.format(root.cur_speed)
                 font_size: '100sp'
             Label:
             TimingHeader:
                 text: "[u]Seat\nTime[/u]"
             TimingValue:
                 id: seat_time
-                text: print(root.seat_time)
+                text: "{:d}:{:02d}".format(int(root.seat_time/3600.),int((root.seat_time%3600)/60))
                 font_size: '100sp'

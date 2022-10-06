@@ -249,6 +249,11 @@ class lap_tracker(object):
       #print('Best lap time: ',fastlaptime)
 
     def update_deltas(self,sample,time,speed):
+        if self.speed_samples > 0:
+            avg_spd = self.speed_running_avg/self.speed_samples
+            Clock.schedule_once(partial(self.dash.set_speed, avg_spd),0)
+            self.speed_samples = 0
+            self.speed_running_avg = 0
         if self.bestKDT is None:
             return
         dists, inds = self.bestKDT.query(sample, k=2)
@@ -277,9 +282,6 @@ class lap_tracker(object):
             sdeltav = '[color=#00FF00]+{:5.2f}[/color]'.format(deltav)
         Clock.schedule_once(partial(self.dash.set_deltat, sdeltat),0)
         Clock.schedule_once(partial(self.dash.set_deltav, sdeltav),0)
-        if self.speed_samples > 0:
-            avg_spd = self.speed_running_avg/self.speed_samples
-            Clock.schedule_once(partial(self.dash.set_speed, avg_spd),0)
 
     def add_to_lap(self):
         #First convert to feet and check if we've crossed the start finish line
@@ -392,6 +394,8 @@ def monitorgps(dash):
 
     #temporary nmea file read for testing
     nmeagps = open('/media/chump_thumb/chump_log_processing/road_atlanta_and_mid_ohio_2022/0074/gps_nmea.log', 'r')
+    for i in range(500):
+        nmeagps.readline()
     nmea_gps_period = 1.0
 
     while True:
