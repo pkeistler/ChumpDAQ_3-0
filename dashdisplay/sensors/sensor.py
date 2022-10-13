@@ -6,6 +6,9 @@ from kivy.clock import Clock
 from functools import partial
 from qwiic_icm20948 import QwiicIcm20948 as q9dof
 import os
+import smbus
+import board
+import adafruit_vl53l1x
 
 
 class Sensor(object):
@@ -104,11 +107,28 @@ def monitorsensors(dash):
                val = round(val,1)
                Clock.schedule_once(partial(dash.set_oilp, val),0)
 
-def monitor9dof(dash):
+def monitori2csensors(dash):
     last_read = 0
     init_check_period = 1.0
     main_log_start = False
     sensor_period = 0.25
+
+    #setup i2c comm for simple sensors
+    bus = smbus.SMBus(1)
+    temp1add = 0x10
+    def read_temp(add):
+        bus.write_byte(add,0x80)
+        data = []
+        for i in range(6):
+            data.append(bus.read_byte(add))
+        amb = (data[2]*2**16 + data[1]*2**8 + data[0])/200.0
+        obj = (data[5]*2**16 + data[4]*2**8 + data[3])/200.0
+        return ((amb+273.15)*9/5-459.67, (obj+273.15)*9/5-459.67)
+
+    #setup i2c for distance sensors
+    i2c = board.I2C()
+    vl53 = adafruit_vl53l1x.VL53L1X(i2c)
+    vl53.start_ranging()
 
     while not main_log_start:
         curtime = time()
@@ -119,7 +139,7 @@ def monitor9dof(dash):
             continue
         main_log_start = True
 
-    imu_log_file = os.path.join(dash.log_folder, 'imu.log')
+    i2c_log_file = os.path.join(dash.log_folder, 'i2c.log')
 
     imu = q9dof()
     if not imu.connected:
@@ -127,6 +147,18 @@ def monitor9dof(dash):
         return
 
     imu.begin()
+
+    temps1 = (0,0)
+    ax = 0
+    ay = 0
+    az = 0
+    gx = 0
+    gy = 0
+    gz = 0
+    mx = 0
+    my = 0
+    mz = 0
+    distance = 0
 
     while True:
         if dash.start_time < 0:
@@ -137,15 +169,34 @@ def monitor9dof(dash):
         last_read = curtime
         if imu.dataReady():
             imu.getAgmt()
-            with open(imu_log_file, 'a') as f:
-                f.write('{:.2f} {:06d} {:06d} {:06d} {:06d} {:06d} {:06d} {:06d} {:06d} {:06d}\n'.format(
-                    curtime-dash.start_time,
-                    imu.axRaw,
-                    imu.ayRaw,
-                    imu.azRaw,
-                    imu.gxRaw,
-                    imu.gyRaw,
-                    imu.gzRaw,
-                    imu.mxRaw,
-                    imu.myRaw,
-                    imu.mzRaw))
+            ax = imu.axRaw
+            ay = imu.ayRaw
+            az = imu.azRaw
+            gx = imu.gxRaw
+            gy = imu.gyRaw
+            gz = imu.gzRaw
+            mx = imu.mxRaw
+            my = imu.myRaw
+            mz = imu.mzRaw
+        temps1 = read_temp(temp1add)
+        if vl53.data_ready:
+            distance = vl53.distance
+            vl53.clear_interrupt()
+            if not distance:
+                distance = 0.0
+            distance = distance * 10.0
+        with open(i2c_log_file, 'a') as f:
+            f.write('{:.2f} {:06d} {:06d} {:06d} {:06d} {:06d} {:06d} {:06d} {:06d} {:06d} {:6.1f} {:6.1f} {:4.1f}\n'.format(
+                curtime-dash.start_time,
+                ax,
+                ay,
+                az,
+                gx,
+                gy,
+                gz,
+                mx,
+                my,
+                mz,
+                temps1[0],
+                temps1[1],
+                distance))

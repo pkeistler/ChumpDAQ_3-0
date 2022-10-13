@@ -17,7 +17,7 @@ from kivy.properties import (
 #import matplotlib.pyplot as plt
 from threading import Thread
 from .sensors import monitorsensors
-from .sensors import monitor9dof
+from .sensors import monitori2csensors
 from .gps_logger import monitorgps
 from kivy.clock import Clock
 from time import time
@@ -123,7 +123,7 @@ class ChumpDashApp(App):
         print('Starting gps thread.')
         Thread(target=monitorgps, args=(self.MDS,)).start()
         print('Starting imu thread.')
-        Thread(target=monitor9dof, args=(self.MDS,)).start()
+        Thread(target=monitori2csensors, args=(self.MDS,)).start()
 
 if __name__ == '__main__':
     # Setup the window position
