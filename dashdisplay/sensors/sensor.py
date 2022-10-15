@@ -224,27 +224,27 @@ def monitori2csensors(dash):
         #read left and right corner sensors
         select_i2c_bus(left_bus)
         temps_left = read_temp(temp_add)
-        try:
-            if vl53_left.data_ready:
-                height_left = vl53_left.distance
-                vl53_left.clear_interrupt()
-        except OSError:
-            height_left = 0.0
-        if not height_left:
-            height_left = 0.0
-        height_left = height_left #* 10.0
+        if vl53_left:
+            try:
+                if vl53_left.data_ready:
+                    height_left = vl53_left.distance
+                    vl53_left.clear_interrupt()
+            except OSError:
+                height_left = 0.0
+            if not height_left:
+                height_left = 0.0
 
         select_i2c_bus(right_bus)
         temps_right = read_temp(temp_add)
-        try:
-            if vl53_right.data_ready:
-                height_right = vl53_right.distance
-                vl53_right.clear_interrupt()
-        except OSError:
-            height_right = 0.0
-        if not height_right:
-            height_right = 0.0
-        height_right = height_right #* 10.0
+        if vl53_right:
+            try:
+                if vl53_right.data_ready:
+                    height_right = vl53_right.distance
+                    vl53_right.clear_interrupt()
+            except OSError:
+                height_right = 0.0
+            if not height_right:
+                height_right = 0.0
 
         # write tire temps back to dashboard
         val = '{:5.1f} F'.format(temps_left[1])
