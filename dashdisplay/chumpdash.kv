@@ -129,7 +129,7 @@
                     value: max(min(self.max,root.oilp),self.min)
                     sectors: 0, self.sector3, 10, self.sector2, 90, self.sector3, 100
         GridLayout:
-            cols: 5
+            cols: 6
             size_hint: 1, 0.20
             TimingHeader:
                 text: "[u]Current\nSpeed[/u]"
@@ -137,7 +137,26 @@
                 id: cur_speed
                 text: '{:4.1f}'.format(root.cur_speed)
                 font_size: '100sp'
-            Label:
+            GridLayout:
+                rows: 2
+                TimingHeader:
+                    text: "[u]Tire FL[/u]"
+                    font_size: '40sp'
+                    size_hint: 1, 0.45
+                TimingValue:
+                    id: tire_fl
+                    text: root.tire_fl
+                    font_size: '80sp'
+            GridLayout:
+                rows: 2
+                TimingHeader:
+                    text: "[u]Tire FR[/u]"
+                    font_size: '40sp'
+                    size_hint: 1, 0.45
+                TimingValue:
+                    id: tire_fr
+                    text: root.tire_fr
+                    font_size: '80sp'
             TimingHeader:
                 text: "[u]Seat\nTime[/u]"
             TimingValue:

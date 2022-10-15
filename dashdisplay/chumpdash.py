@@ -42,6 +42,8 @@ class MainDashScreen(Widget):
     best_lap = StringProperty('0: 9.59')
     log_folder = StringProperty("/media/chump_thumb/chump_logs")
     current_track = StringProperty("Finding track.")
+    tire_fl = StringProperty('0.0 F')
+    tire_fr = StringProperty('0.0 F')
     lap_image_init = False
 #    current_lap_xtrace = ListProperty([0.0])
 #    current_lap_ytrace = ListProperty([0.0])
@@ -78,6 +80,10 @@ class MainDashScreen(Widget):
         self.last_lap = value
     def set_bestlap(self, value, *largs):
         self.best_lap = value
+    def set_tire_fl(self, value, *largs):
+        self.tire_fl = value
+    def set_tire_fr(self, value, *largs):
+        self.tire_fr = value
     def update_lap_image(self, *largs):
         if not self.lap_image_init:
             self.image = Image(source='{}/lap_plot.png'.format(self.log_folder))

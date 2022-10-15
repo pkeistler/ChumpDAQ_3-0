@@ -112,23 +112,11 @@ def monitori2csensors(dash):
     init_check_period = 1.0
     main_log_start = False
     sensor_period = 0.25
-
-    #setup i2c comm for simple sensors
-    bus = smbus.SMBus(1)
-    temp1add = 0x10
-    def read_temp(add):
-        bus.write_byte(add,0x80)
-        data = []
-        for i in range(6):
-            data.append(bus.read_byte(add))
-        amb = (data[2]*2**16 + data[1]*2**8 + data[0])/200.0
-        obj = (data[5]*2**16 + data[4]*2**8 + data[3])/200.0
-        return ((amb+273.15)*9/5-459.67, (obj+273.15)*9/5-459.67)
-
-    #setup i2c for distance sensors
-    i2c = board.I2C()
-    vl53 = adafruit_vl53l1x.VL53L1X(i2c)
-    vl53.start_ranging()
+    left_bus = 0
+    right_bus = 1
+    temp_add = 0x10
+    left_height_offset = 0.0
+    right_height_offset = 0.0
 
     while not main_log_start:
         curtime = time()
@@ -140,15 +128,66 @@ def monitori2csensors(dash):
         main_log_start = True
 
     i2c_log_file = os.path.join(dash.log_folder, 'i2c.log')
+    i2c_debug_file = os.path.join(dash.log_folder, 'i2c_debug.log')
 
     imu = q9dof()
+    imufound = True
     if not imu.connected:
-        print('IMU not connected')
-        return
+        with open(i2c_debug_file, 'a') as f:
+            f.write('imu not detected\n')
+        imufound = False
 
-    imu.begin()
+    if imufound:
+        for i in range(20):
+            try:
+                imu.begin()
+            except OSError:
+                if i==19:
+                    with open(i2c_debug_file, 'a') as f:
+                        f.write('imu not started\n')
+                continue
+            break
 
-    temps1 = (0,0)
+    #setup i2c comm for simple sensors
+    bus = smbus.SMBus(1)
+    def read_temp(add):
+        try:
+            bus.write_byte(add,0x80)
+        except OSError:
+            return (0.0, 0.0)
+        data = []
+        for i in range(6):
+            data.append(bus.read_byte(add))
+        amb = (data[2]*2**16 + data[1]*2**8 + data[0])/200.0
+        obj = (data[5]*2**16 + data[4]*2**8 + data[3])/200.0
+        return ((amb+273.15)*9/5-459.67, (obj+273.15)*9/5-459.67)
+
+    #function to toggle the bus for i2c multiplexers
+    def select_i2c_bus(multibus):
+        try:
+            bus.write_byte(0x70,1<<multibus)
+        except OSError:
+            print('I2C Multiplexers not found.')
+
+    #setup i2c for distance sensors
+    i2c = board.I2C()
+    select_i2c_bus(left_bus)
+    try:
+        vl53_left = adafruit_vl53l1x.VL53L1X(i2c)
+    except:
+        vl53_left = False
+    if vl53_left:
+        vl53_left.start_ranging()
+    select_i2c_bus(right_bus)
+    try:
+        vl53_right = adafruit_vl53l1x.VL53L1X(i2c)
+    except:
+        vl53_right = False
+    if vl53_right:
+        vl53_right.start_ranging()
+
+    temps_left = (0,0)
+    temps_right = (0,0)
     ax = 0
     ay = 0
     az = 0
@@ -158,7 +197,8 @@ def monitori2csensors(dash):
     mx = 0
     my = 0
     mz = 0
-    distance = 0
+    height_left = 0
+    height_right = 0
 
     while True:
         if dash.start_time < 0:
@@ -167,6 +207,8 @@ def monitori2csensors(dash):
         if curtime-last_read < sensor_period:
             continue
         last_read = curtime
+
+        #read internal 9dof sensor
         if imu.dataReady():
             imu.getAgmt()
             ax = imu.axRaw
@@ -178,15 +220,39 @@ def monitori2csensors(dash):
             mx = imu.mxRaw
             my = imu.myRaw
             mz = imu.mzRaw
-        temps1 = read_temp(temp1add)
-        if vl53.data_ready:
-            distance = vl53.distance
-            vl53.clear_interrupt()
-            if not distance:
-                distance = 0.0
-            distance = distance * 10.0
+
+        #read left and right corner sensors
+        select_i2c_bus(left_bus)
+        temps_left = read_temp(temp_add)
+        try:
+            if vl53_left.data_ready:
+                height_left = vl53_left.distance
+                vl53_left.clear_interrupt()
+        except OSError:
+            height_left = 0.0
+        if not height_left:
+            height_left = 0.0
+        height_left = height_left #* 10.0
+
+        select_i2c_bus(right_bus)
+        temps_right = read_temp(temp_add)
+        try:
+            if vl53_right.data_ready:
+                height_right = vl53_right.distance
+                vl53_right.clear_interrupt()
+        except OSError:
+            height_right = 0.0
+        if not height_right:
+            height_right = 0.0
+        height_right = height_right #* 10.0
+
+        # write tire temps back to dashboard
+        val = '{:5.1f} F'.format(temps_left[1])
+        Clock.schedule_once(partial(dash.set_tire_fl, val),0)
+        val = '{:5.1f} F'.format(temps_right[1])
+        Clock.schedule_once(partial(dash.set_tire_fr, val),0)
         with open(i2c_log_file, 'a') as f:
-            f.write('{:.2f} {:06d} {:06d} {:06d} {:06d} {:06d} {:06d} {:06d} {:06d} {:06d} {:6.1f} {:6.1f} {:4.1f}\n'.format(
+            f.write('{:.2f} {:06d} {:06d} {:06d} {:06d} {:06d} {:06d} {:06d} {:06d} {:06d} {:6.1f} {:6.1f} {:6.1f} {:6.1f} {:4.1f} {:4.1f}\n'.format(
                 curtime-dash.start_time,
                 ax,
                 ay,
@@ -197,6 +263,9 @@ def monitori2csensors(dash):
                 mx,
                 my,
                 mz,
-                temps1[0],
-                temps1[1],
-                distance))
+                temps_left[0],
+                temps_left[1],
+                temps_right[0],
+                temps_right[1],
+                height_left*10.0+left_height_offset,
+                height_right*10.0+right_height_offset,))
