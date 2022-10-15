@@ -392,11 +392,11 @@ def monitorgps(dash):
     port = Serial('/dev/ttyS0', 115200, timeout=1)
     gps = UBXReader(port)
 
-    #temporary nmea file read for testing
-    nmeagps = open('/media/chump_thumb/chump_log_processing/road_atlanta_and_mid_ohio_2022/0074/gps_nmea.log', 'r')
-    for i in range(500):
-        nmeagps.readline()
-    nmea_gps_period = 1.0
+    ##temporary nmea file read for testing
+    #nmeagps = open('/media/chump_thumb/chump_log_processing/road_atlanta_and_mid_ohio_2022/0074/gps_nmea.log', 'r')
+    #for i in range(500):
+    #    nmeagps.readline()
+    #nmea_gps_period = 1.0
 
     while True:
         if not main_log_start:
@@ -408,14 +408,14 @@ def monitorgps(dash):
                 continue
             main_log_start = True
 
-            #lapper = lap_tracker(gps,dash)
-            lapper = lap_tracker(nmeagps, dash, gpsformat='nmea')
+            lapper = lap_tracker(gps,dash)
+            #lapper = lap_tracker(nmeagps, dash, gpsformat='nmea')
 
         # MAIN LOOP
-        # make it wait 1 secon between updates
-        curtime = time()
-        if curtime-last_read < nmea_gps_period:
-            continue
-        last_read = curtime
+        ## make it wait 1 secon between updates
+        #curtime = time()
+        #if curtime-last_read < nmea_gps_period:
+        #    continue
+        #last_read = curtime
 
         lapper.update()
