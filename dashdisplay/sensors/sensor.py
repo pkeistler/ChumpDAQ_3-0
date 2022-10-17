@@ -211,15 +211,15 @@ def monitori2csensors(dash):
         #read internal 9dof sensor
         if imu.dataReady():
             imu.getAgmt()
-            ax = imu.axRaw
-            ay = imu.ayRaw
-            az = imu.azRaw
-            gx = imu.gxRaw
-            gy = imu.gyRaw
-            gz = imu.gzRaw
-            mx = imu.mxRaw
-            my = imu.myRaw
-            mz = imu.mzRaw
+            ax = imu.axRaw/16384.0
+            ay = imu.ayRaw/16384.0
+            az = imu.azRaw/16384.0
+            gx = imu.gxRaw/131.0
+            gy = imu.gyRaw/131.0
+            gz = imu.gzRaw/131.0
+            mx = imu.mxRaw*0.15
+            my = imu.myRaw*0.15
+            mz = imu.mzRaw*0.15
 
         #read left and right corner sensors
         select_i2c_bus(left_bus)
@@ -252,7 +252,7 @@ def monitori2csensors(dash):
         val = '{:5.1f} F'.format(temps_right[1])
         Clock.schedule_once(partial(dash.set_tire_fr, val),0)
         with open(i2c_log_file, 'a') as f:
-            f.write('{:.2f} {:06d} {:06d} {:06d} {:06d} {:06d} {:06d} {:06d} {:06d} {:06d} {:6.1f} {:6.1f} {:6.1f} {:6.1f} {:4.1f} {:4.1f}\n'.format(
+            f.write('{:.2f} {:5.2f} {:5.2f} {:5.2f} {:6.1f} {:6.1f} {:6.1f} {:6.0f} {:6.0f} {:6.0f} {:6.1f} {:6.1f} {:6.1f} {:6.1f} {:4.1f} {:4.1f}\n'.format(
                 curtime-dash.start_time,
                 ax,
                 ay,
